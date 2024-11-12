@@ -12,7 +12,7 @@
  use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
  
  class CreateModuleCommand extends Command {
-    
+  
   const ARG_VENDOR = 'vendor';
   const ARG_MODULE = 'module';
   
@@ -33,13 +33,20 @@
   protected function execute(InputInterface $input, OutputInterface $output) {
    $vendor = $input->getArgument(self::ARG_VENDOR);
    $module = $input->getArgument(self::ARG_MODULE);
+   
+   $restrictedVendors = ['Magento', 'Cms'];
+   if(in_array($vendor, $restrictedVendors, true)) {
+    $output->writeln("<error>The vendor name '{$vendor}' is not allowed. Please choose a different name.</error>");
+    return Cli::RETURN_FAILURE;
+   }
+   
    $baseDir = BP . "/app/code/{$vendor}/{$module}/";
    $templatesDir = BP . '/app/code/UpSage/AdminCrud/templates/';
    $vendorLC = strtolower($vendor);
    $moduleLC = strtolower($module);
    $vendorUC = strtoupper($vendor);
    $moduleUC = strtoupper($module);
-
+   
    if(is_dir($baseDir)) {
     $output->writeln("<error>Module directory {$baseDir} already exists. Aborting.</error>");
     return Cli::RETURN_FAILURE;
@@ -76,9 +83,35 @@
     "Controller/Adminhtml/{$module}/MassDelete.php" => "Controller/Adminhtml/_/MassDelete.tpl",
     "Controller/Adminhtml/{$module}/NewAction.php" => "Controller/Adminhtml/_/NewAction.tpl",
     "Controller/Adminhtml/{$module}/Save.php" => "Controller/Adminhtml/_/Save.tpl",
+    "Model/Get{$module}ByIdentifier.php" => "Model/GetByIdentifier.tpl",
+    "Model/{$module}.php" => "Model/_.tpl",
+    "Model/{$module}Repository.php" => "Model/Repository.tpl",
+    "Model/{$module}SearchResults.php" => "Model/SearchResults.tpl",
+    "Model/Api/SearchCriteria/CollectionProcessor/FilterProcessor/{$module}StoreFilter.php" => "Model/Api/SearchCriteria/CollectionProcessor/FilterProcessor/StoreFilter.tpl",
+    "Model/Config/Source/{$module}.php" => "Model/Config/Source/_.tpl",
+    "Model/{$module}/DataProvider.php" => "Model/_/DataProvider.tpl",
+    "Model/{$module}/Source/IsActive.php" => "Model/_/Source/IsActive.tpl",
+    "Model/ResourceModel/{$module}.php" => "Model/ResourceModel/_.tpl",
+    "Model/ResourceModel/AbstractCollection.php" => "Model/ResourceModel/AbstractCollection.tpl",
+    "Model/ResourceModel/{$module}/Collection.php" => "Model/ResourceModel/_/Collection.tpl",
+    "Model/ResourceModel/{$module}/Grid/Collection.php" => "Model/ResourceModel/_/Grid/Collection.tpl",
+    "Model/ResourceModel/{$module}/Relation/Store/ReadHandler.php" => "Model/ResourceModel/_/Relation/Store/ReadHandler.tpl",
+    "Model/ResourceModel/{$module}/Relation/Store/SaveHandler.php" => "Model/ResourceModel/_/Relation/Store/SaveHandler.tpl",
+    "Model/Template/Filter.php" => "Model/Template/Filter.tpl",
+    "Model/Template/FilterProvider.php" => "Model/Template/FilterProvider.tpl",
+    "Ui/Component/AddFilterInterface.php" => "Ui/Component/AddFilterInterface.tpl",
+    "Ui/Component/DataProvider.php" => "Ui/Component/DataProvider.tpl",
+    "Ui/Component/Listing/Column/{$module}Actions.php" => "Ui/Component/Listing/Column/Actions.tpl",
+    "Ui/Component/Listing/Column/{$module}/Options.php" => "Ui/Component/Listing/Column/_/Options.tpl",
+    "view/adminhtml/layout/{$vendorLC}_{$moduleLC}_edit.xml" => "view/adminhtml/layout/_edit.tpl",
+    "view/adminhtml/layout/{$vendorLC}_{$moduleLC}_index.xml" => "view/adminhtml/layout/_index.tpl",
+    "view/adminhtml/layout/{$vendorLC}_{$moduleLC}_new.xml" => "view/adminhtml/layout/_new.tpl",
+    "view/adminhtml/ui_component/{$vendorLC}_{$moduleLC}_form.xml" => "view/adminhtml/ui_component/_form.tpl",
+    "view/adminhtml/ui_component/{$vendorLC}_{$moduleLC}_listing.xml" => "view/adminhtml/ui_component/_listing.tpl",
+    "view/frontend/templates/widget/{$moduleLC}/default.phtml" => "view/frontend/templates/widget/_/default.tpl",
    ];
    
-   try{
+   try {
     foreach ($fileMappings as $filePath => $templateFile) {
      $fullPath = $baseDir . $filePath;
      $templateFilePath = $templatesDir . $templateFile;
@@ -108,9 +141,9 @@
   
   protected function createFile($filePath, $content) {
    if(!is_dir(dirname($filePath))) {
-    $this->filesystem->mkdir(dirname($filePath), 0777);
+    $this->filesystem->mkdir(dirname($filePath));
    }
-   $this->filesystem->dumpFile($filePath, $content);
+   file_put_contents($filePath, $content);
   }
 
- }
+}
